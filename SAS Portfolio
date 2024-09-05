@@ -1,0 +1,143 @@
+/*
+#1. Please Please read a dataset called ecommerce dataset from dataset library
+
+	This dataset contains eight variables : 
+	InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerId, Country
+*/	
+data ecommerce;
+set dataset.ecommerce;
+run;
+
+/*
+#2. Extract date and time variables from Invoicedate variable
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+run;
+
+/*
+#3. Create weekday variable that returns the day of the week
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+run;
+
+/*
+#4. Create week variable that returns the week number
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+run;
+
+/*
+#5. Convert UnitPrice to numeric variable and call it as price, and then round it to one decimal point
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+price = round(input(UnitPrice, numeric.), .1);
+run;
+
+/*
+#6. In the Country variable, remove blanks between substrings, so that the each value will contain only one string. 
+For example, “United kingdom” will be “UnitedKingdom”
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+price = round(input(UnitPrice, numeric.), .1);
+country = compress(Country, " ");
+run;
+
+/*
+#7. 	Calculate the number of minutes between each two continuous transactions. 
+
+For example, 
+
+InvoiceNo	Time	DifMin
+   1	   10:00	
+   2	   12:00	 120
+   3	   12:05	   5
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+price = round(input(UnitPrice, numeric.), .1);
+country = compress(Country, " ");
+time_lag = lag(time);
+DifMin = intck('minute', time_lag, time, 'c');
+run;
+
+
+/*
+#8. Calculate the the number of days from the beginning of the corresponding year.
+
+For example,
+
+InvoiceNo	Date	    BeginningYear DifDays
+   1	   01/02/2010	  01/01/2010     2
+   2	   02/05/2010	  01/01/2010    36
+*/
+
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+price = round(input(UnitPrice, numeric.), .1);
+country = compress(Country, " ");
+time_lag = lag(time);
+DifMin = intck('minute', time_lag, time, 'c');
+DifDay = datdif(mdy(1, 1, year(date)), date, 'ACT/ACT');
+run;
+
+/*
+#8. ANOTHER OPTION
+*/
+data ecommerce;
+set dataset.ecommerce;
+format date ddmmyy10. time time.;
+date = datepart(InvoiceDate);
+time = timepart(InvoiceDate);
+weekday = weekday(date);
+week = week(date);
+price = round(input(UnitPrice, numeric.), .1);
+country = compress(Country, " ");
+time_lag = lag(time);
+DifMin = intck('minute', time_lag, time, 'c');
+format start_date ddmmyy10.;
+start_date = '01JAN10'd;
+difday2 = datdif(start_date, date, 'ACT/ACT');
+run;
