@@ -1,0 +1,64 @@
+/*
+#1. Please read a dataset called zomato dataset from dataset library
+
+	This dataset contains three variables : 
+	Name :  name of the restaurant
+	Rate :  contains the overall rating of the restaurant out of 5
+	Cuisines : food styles, separated by comma
+*/
+
+data zomato;
+set dataset.zomato;
+run;
+
+/*
+#2. Suppose you cannot save in your database more than two food styles for each restaurant.
+ Please leave only first two food styles. 
+
+	For example, if your food style contains “Chinese, North Indian, Thai”,  a new food style variable will contain
+	only “Chinese, North Indian”
+*/
+
+data zomato;
+set dataset.zomato;
+format foodstyles $31.;
+maxwords = 2;
+do i=1 to maxwords;
+	word = scan(cuisines, i, ',');
+	foodstyles = catx(",", foodstyles, word);
+end;
+run;
+
+
+/*
+#3. Please find  five most popular cuisines(food styles)
+*/
+
+data cuisine_list;
+set dataset.zomato;
+format cuisine $31.;
+number_of_cuisines = countw(cuisines, ",");
+do i=1 to number_of_cuisines;
+	cuisine = scan(cuisines, i, ',');
+	output;
+end;
+run; 
+
+proc sql outobs= 5;
+	select cuisine, count(cuisine) as count
+	from cuisine_list
+	where cuisine is not missing
+	group by cuisine
+	order by count desc;
+quit;
+
+
+/*
+#4. Please extract the rating of each restaurant and convert it into numeric.
+ For example, rate = “4.5/5”, the rating =4.5
+*/
+
+data zomato;
+set dataset.zomato;
+ratings = input(substr(rate, 1, 3), numeric.);
+run;
