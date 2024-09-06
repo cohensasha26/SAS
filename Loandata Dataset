@@ -1,0 +1,35 @@
+/*
+#1. 	Please read a dataset called loandata dataset from dataset library
+
+	This dataset contains four variables :
+	
+	Loan_id  : a unique loan number assigned to each loan customers
+	Principal  : Basic principal loan amount at the origination
+	Terms(days)  : can be weekly (7 days), biweekly, and monthly payoff schedule
+	Effective_date : when the loan got originated and took effects
+*/
+
+data loandata;
+set dataset.loandata;
+run;
+
+/*
+#2. Please calculate Due date based on terms  and effective_date. 	
+	For example, if your effective_date=09/09/2016 and terms=7 then due_date=09/16/2016
+*/
+
+data loandata;
+set dataset.loandata;
+format due_date mmddyy10.;
+due_date = sum(effective_date, terms);
+run;
+
+/*
+	OR
+*/
+
+data loandata;
+set dataset.loandata;
+format due_date mmddyy10.;
+due_date = intnx('day', effective_date, terms, 'S');
+run;
