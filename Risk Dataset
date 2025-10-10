@@ -1,0 +1,54 @@
+/** SAS Data sets for Q1 to Q5: WORK.Risk_data **/
+
+/**Using the ‘PROC UNIVARIATE’ to analyze the variable 
+‘utilization’ for the following measures: **/
+
+libname hk_data '/home/u63973406/SASCOURSE/hk_data';
+
+data risk;
+set hk_data.risk_data;
+run;
+
+/**Q1. What are the mean, median, mode and standard deviation? **/
+
+proc univariate data=hk_data.risk_data;
+var utilization;
+run;
+/*---Mean= 31.5911646 Median=15.10000 Mode=0 std=34.9498105---**/
+
+/**Q2. Test if the mean value of ‘utilization’ is 30. **/
+
+proc univariate data=hk_data.risk_data location=30;
+var utilization;
+run;
+/*---see output 'Tests for Location': Mu0=30, p-value is less than 0.01, so we reject Mu0=30---*/
+
+/**Q3. Test if the variable ‘utilization’ is normally distributed. **/
+
+proc univariate data=hk_data.risk_data normal location=30;
+var utilization;
+run;
+/*---see output 'Tests for Normality': p-value is less than 0.01, so 'utilization' is not normally distributed
+(reject normality)---*/
+
+/**Q4. Draw the histogram for the variable‘utilization’ with the 
+option ‘midpoints=0 to 150 by 10’. What conclusion can you draw 
+from the histogram?  */
+
+proc univariate data=hk_data.risk_data normal location=30;
+var utilization;
+histogram utilization/normal midpoints=0 to 150 by 10;
+run;
+/*---This histogram displays that the data is not normally distributed, since we see heavy data 
+(right skewness/not symmetric) towards the left side of the graph vs. a normally distributed (bell curve) graph. 
+This is confirmed by the low p-value (<0.01) in the 'Tests for Noramlity' output, and again confirms that the variable
+'utilization' is not normally distributed. --- */ 
+
+/**Q5. What are the top and bottom 5% value of ‘utilization’ 
+respectively? **/
+
+proc univariate data=hk_data.risk_data normal plot location=30;
+var utilization;
+histogram utilization/normal midpoints=0 to 150 by 10;
+run;
+/*---The top and bottom 5% value of 'utilization' are 100 and 0, respectiveyl---*/
