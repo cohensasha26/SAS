@@ -1,0 +1,145 @@
+/**SAS Data set for Q1-Q4: WORK.Creditacc_files **/
+
+libname hk_data '/home/u63973406/SASCOURSE/hk_data';
+
+/**Q1: Create a sub data set based on the condition age between 45 and 55 
+or income is more than $40000. **/
+
+data sub_account1;
+set hk_data.creditacc_files;
+if (45 le age le 55) or
+(income>40000);
+run;
+
+/**Q2: Create a sub data set based on the condition age between 45 and 55 
+or income is not missing and less than $40000. **/
+
+data sub_account2;
+set hk_data.creditacc_files;
+where (age between 45 and 55) or
+(income<40000 and income ne .);
+run;
+
+
+/**Q3: Create a sub data set containing the top 30 records. If values of
+income are missing, then impute (replace) them as zero. **/
+
+data sub_account3;
+set hk_data.creditacc_files;
+if _n_<31;
+if income = . then income = 0;
+run;
+
+/**Q4: Obtain a sub data set based on the condition utilization>40 or 
+credit_limit is missing or 0.
+Additionally:
+- Create a field ‘utilization’ using ‘revolve_bal’/’credit limit’ 
+if ‘credit_limit’>0 
+- Impute (replace) all missing values of age and income by zero 
+- Only keep the columns id, age, income, revolve_bal, credit_limit and utilization in the resulting table **/
+
+data sub_account4;
+set hk_data.creditacc_files;
+if (credit_limit>0) then utilization=round(100*revolve_bal/credit_limit, 0.1);
+if (credit_limit le 0) or
+(utilization>40);
+if age= . then age= 0;
+if income = . then income = 0;
+keep id age income revolve_bal credit_limit utilization;
+run;
+/** or **/
+data sub_account5;
+set hk_data.creditacc_files;
+if (credit_limit>0) then utilization=round(100*revolve_bal/credit_limit,.1);
+if (utilization>40) or credit_limit le 0;
+array miss[2] age income;
+do j=1 to 2;
+if miss[j]=. then miss[j]=0;
+end;
+keep ID age income revolve_bal credit_limit utilization;
+run;
+
+/**SAS Data set for Q5-Q8: WORK.Fin_account 
+Browsing the data set ‘WORK.Fin_account’ which contains the credit 
+card account information (snapshot) at certain month. Please solve the 
+following questions (for each question you will create a new SAS data 
+set) using data step and conditional statements. **/
+
+/**Q5. Create a column ‘utilization’ based on the calculation
+100*Tot_New_Bal1012/ Credit_Lim1012,
+if Credit_Lim1012 is missing or 0 then assign value 999 to the new variable ‘utilization’. **/
+
+data fin_account1;
+set hk_data.fin_account;
+utilization= round(100*Tot_New_Bal1012/Credit_Lim1012, 1);
+if (Credit_Lim1012= . or Credit_Lim1012= 0) then utilization=999;
+run;
+/** or **/
+data fin_account2;
+set hk_data.fin_account;
+if Credit_Lim1012=. or Credit_Lim1012=0 then utilization=999;
+else utilization=round(100*ToT_New_Bal1012/Credit_Lim1012,1);
+run;
+
+/**Q6. Create a new table ‘normal_fin_acc’ only containing the records 
+with the restriction condition ‘0=<utilization<=100’. **/
+
+data normal_fin_acc;
+set hk_data.fin_account;
+utilization= round(100*Tot_New_Bal1012/Credit_Lim1012, 1);
+if (0 <= utilization <=100);
+run;
+
+/**Q7. Following Q6, apply ‘SELECT...when’ statement on the variable ‘utilization’ 
+of table ‘normal_fin_acc’ to generate new variable 
+‘ut_level’, whose value is determined by the following rules: 
+
+ 70 to 100-‘HIGH’
+ 35 to 69-‘MEDIUM’
+ Less than 35-’LOW’
+ 
+Finally only keep the following columns in the resulting data set: 
+‘ACCT_KEY’, ‘Tot_New_Bal1012’, ‘Credit_Lim1012’, ‘utilization’, ‘ut_level’ and ‘Purchases’. **/
+
+proc sql;
+	CREATE TABLE normal_fin_acc1 AS
+	SELECT ACCT_KEY, Tot_New_Bal1012, Credit_Lim1012, utilization, purchases,
+	CASE
+	WHEN utilization between 70 and 100 then 'HIGH'
+	WHEN utilization between 35 and 69 then 'MEDIUM'
+	ELSE 'LOW'
+	END AS ut_level
+	FROM normal_fin_acc;
+quit;	
+/** or **/
+data normal_fin_acc2;
+set normal_fin_acc;
+select;
+	when (70 le utilization le 100) ut_level = 'HIGH';
+	when (35 le utilization le 69) ut_level = 'MEDIUM';
+	otherwise ut_level= 'LOW';
+	END;
+keep ACCT_KEY Tot_New_Bal1012 Credit_Lim1012 utilization ut_level purchases;
+run;
+
+
+/**Q8. Following Q7, create a new table ‘acc_ind’ using the condition
+‘Purchases>0’ to restrict the observations in the resulting data set. 
+In addition: 
+- Create the following missing dummy variables based on 'Tot_New_Bal1012' and 
+'Credit_Lim1012’,
+-i.e. the value of variable ‘bal_miss’ is 1 if the value of 'Tot_New_Bal1012' is 
+missing otherwise is 0, and the value of ‘limit_miss’ is 1 if the 
+value of ‘Credit_Lim1012’ is missing otherwise is 0 
+- Only keep the columns ‘ACCT_KEY’, ‘ut_level’, ‘bal_miss’ and ‘limit_miss’ **/
+
+data acc_ind;
+set normal_fin_acc2;
+where purchases>0;
+if Tot_New_Bal1012 = . then bal_miss=1;
+else bal_miss=0; 
+if Credit_Lim1012 = . then limit_miss=1;
+else limit_miss=0;
+keep ACCT_KEY ut_level bal_miss limit_miss;
+run;
+
