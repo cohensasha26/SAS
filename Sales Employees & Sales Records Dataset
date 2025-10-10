@@ -1,0 +1,246 @@
+/** SAS Data sets for Q1 to Q4: WORK.Sales_employees and 
+WORK.Sales_records **/
+
+
+/** Q1.Applying the ‘PROC SQL’ to extract observations from the SAS data 
+set 'WORK.Sales_employees' using the restriction rules below and 
+saving the results into a SAS table 'WORK.empres'.  
+The restriction rules  
+(a) Only keep 'sales_name'.  
+(b) The field 'sales_id' is between 20000 and 40000.  
+(c) All sales come from North or South areas.  **/
+
+proc sql noprint;
+	create table empres as
+	select sales_name
+	from hk_data.sales_employees
+	where (sales_id between 20000 and 40000)
+	and (area in('North','South'));
+	quit;
+	run;
+
+/**Q2. Using the ‘PROC SQL’ to summarize observations from the SAS table 
+'WORK.Sales_records' and saving the results into a table 
+'WORK.salesres_1'. The resulting table contains the aggregated fields 
+'sale_amount' and ‘total transaction number’ for each ‘sales employee’ 
+and ‘product’ group. Finally sort the resulting table by the 
+descending order of the aggregated 'sale_amount'. **/
+
+proc sql noprint;
+	create table salesres_1 as
+	select sum(sale_amount) as tot_sales, count(*) as tot_trannum 
+	from sales_records
+	group by sales_id, product_id
+	order by tot_sales DESC;
+	quit;
+	run;
+	
+/**Q3.Conducting the same SQL query as in Q2 and saving the results into 
+a table 'WORK.salesres_2', but adding the following restricted rules:  
+(a) The transaction time is between May and September.  
+(b) The aggregated 'sale_amount' is more than $40,000.  **/
+
+proc sql noprint;
+	create table salesres_2 as
+	select sales_id, product_id, sum(sale_amount) as tot_sales, count(*) as tot_trannum
+	from hk_data.sales_records
+	where (5 LE month(transaction_date) LE 9)
+	group by sales_id, product_id
+	having tot_sales >40000
+	order by tot_sales DESC;
+	quit;
+	run;
+
+/**Q4.Using the ‘PROC SQL’ to solve the following questions  
+(a)Creating a data set 'WORK.salesarea' by inner joining the tables 
+‘WORK.Sales_employees’ and ‘WORK.Sales_records’ by the field 
+'sales_id'. Where only keeping the columns 'sales_name', 'sale_amount' 
+and 'area'. **/
+
+proc sql noprint;
+	create table salesarea as
+	select sales_name, sale_amount, area
+	from hk_data.sales_employees a
+	inner join hk_data.sales_records b
+	on a.sales_id = b.sales_id;
+	quit;
+	run;
+
+/**(b)Creating a table 'WORK.salesarea_sum' by summarizing the column 
+'sale_amount' in the table 'WORK.salesarea' (create above) for each 
+sales employee. Listing the 'area', 'maximum sale_amount', 'minimum 
+sale_amount' and 'mean sale_amount' in the resulting table. All the 
+sales amount columns are required to be assigned with the dollar 
+format. Finally, the resulting table only contains the records with 
+the average sale_amount>$6000 and ordered by the average sale_amount. **/
+
+proc sql noprint;
+	create table salesarea_sum as
+	select sales_name, area,
+	avg(sale_amount) as avg_sales format dollar11.,
+	max(sale_amount) as max_sales format dollar11.,
+	min(sale_amount) as min_sales format dollar11.
+	from hk_data.sales_employees a
+	inner join hk_data.sales_records b
+	on a.sales_id = b.sales_id
+	group by sales_name, area
+	having avg_sales>60000
+	order by avg_sales;
+	quit;
+	run;
+	
+/**SAS Data sets for Q5 to Q6: WORK.Travel_flight and 
+WORK. Travel_delay **/
+
+/**Q5. Applying the ‘PROC SQL’ to extract observations from the table 
+'WORK.Travel_flight' to create a resulting table which contains the 
+following columns: 'flight', 'miles' and 'empty_seats' with the filter 
+condition 'miles>1000'. Where the first two columns are the existing 
+variables in the table 'WORK.Travel_flight' and the last column 
+('empty_seats') is a newly created variable using the following steps:  
+
+(a) Calculating a variable temp=capacity - boarded.
+
+(b) If temp is between 0 and 20 then empty_seats='low'; 
+If temp is between 21 and 100 then empty_seats='medium';  
+If temp is more than 100 then empty_seats='high'. 
+Finally please de-duplicate the result. **/
+
+proc sql;
+	create table travel_flight_emp as
+	select distinct(flight), miles,
+	case
+	when (capacity-boarded) between 0 and 20 then seats='low'
+	when (capacity-boarded) between 21 and 100 then seats='medium'
+	when (capacity-boarded) >100 then 'high'
+	end as empty_seats
+	from Travel_flight
+	where miles>1000;
+	quit;
+	
+
+/**Q6. Applying ‘PROC SQL’ to extract observations from the table 
+'WORK.Travel_delay' based on the following requests: 
+(a) Finding the number of 'Domestic' flights for each destination type 
+without delay. **/
+
+proc sql;
+	create table res_delay_1 as
+	select dest, count(*) as flight_num
+	from Travel_delay
+	where delaycat='No Delay'
+	group by dest;
+	quit;
+
+/**(b) Finding all records with the destination being 'WAS' before MAR 5 
+and ordering the resulting table by variable 'delay'. **/
+
+proc sql;
+	create table res_delay_2 as
+	select dest, count(*) as flight_num
+	from Travel_delay
+	where dest='WAS' and day(date)<5 and month(date)=3
+	order by delay;
+	quit;
+
+/**(c) Finding how many flights are 'normal (no delay)', 'delayed' and 
+'advanced' separately? **/
+
+proc sql;
+	create table res_delay_3 as
+	select Count(*) as number,
+	case
+	when delay>0 then 'delayed'
+	when delay=0 then 'normal'
+	else 'advanced'
+	end as time_ind
+	from Travel_delay
+	group by time_ind;
+	quit;
+
+/**(d) Creating a SAS table 'des' which contains only unique destination 
+and destination type.  **/
+
+proc sql;
+	create table des as
+	select distinct(dest), desttype
+	from Travel_delay;
+	quit;
+
+/**(e) Updating the table by changing the values of destination type from 
+string 'International' to 'INTER' and 'Domestic' to 'DOM' 
+respectively. **/
+
+proc sql;
+	create table Travel_delay_new as
+	select *
+	from Travel_delay;
+	update Travel_delay_new set destype='INTER' where destype='International';
+	update Travel_delay_new set destype='DOM' where destype='Domestic';
+	quit;
+
+/**(f) Calculating the average delay for those flights with 1-10 minutes 
+delay. **/
+
+proc sql;
+	create table avg_delay as
+	select avg(delay)
+	from Travel_delay
+	where delay between 1 and 10;
+	quit;
+
+/**(g) Deleting records from the table 'des' created in (d) with 
+destination being 'PAR'. **/
+
+proc sql;
+	delete from des 
+	where dest='PAR';
+	quit;
+
+/**(h) Comparing the total delay time on MAR and APR for each 
+destination, and finding which destination has the largest time 
+difference (for delay time)? **/
+
+proc sql;
+	create table delay_mar as
+	select dest, sum(delay) as delay_march
+	from Travel_delay
+	where month(date)=3 
+	group by dest;
+	
+	create table delay_apr as
+	select dest, sum(delay) as delay_apr
+	from Travel_delay
+	where month(date)=4
+	group by dest;
+	
+	create table delay_compare as
+	select dest, abs(delay_march-delay_apr) as delay_diff
+	from delay_mar m
+	inner join delay_apr a
+	on m.dest=a.dest
+	order by delay_diff DESC;
+	quit;
+	
+
+/**(I)Using 'PROC SQL' to create a SAS table by extracting observations 
+from the table 'WORK.Travel_delay'. The resulting table has the 
+following restriction rules (a) Only extract the columns 'flight', 
+'date', 'dest' and 'delay' (b) No duplicated records (c) All flight 
+numbers must belong to those flight numbers in the SAS table 
+'WORK.Travel_flight' with the following conditions 'miles>3500 and 
+capacity>220' (d) All the flight dates are March 1994. **/
+
+proc sql;
+	create table res_delay_5 as
+	select distinct(flight), date, dest, delay
+	from Travel_delay
+	where flight in(
+	select distinct(flight
+	from Travel_flight
+	where miles>3500
+	and capacity>220
+	and (month(date)=3)
+	)
+	order by delay DESC;
+	quit;
