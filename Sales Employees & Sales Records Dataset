@@ -29,7 +29,7 @@ descending order of the aggregated 'sale_amount'. **/
 proc sql noprint;
 	create table salesres_1 as
 	select sum(sale_amount) as tot_sales, count(*) as tot_trannum 
-	from sales_records
+	from hk_data.sales_records
 	group by sales_id, product_id
 	order by tot_sales DESC;
 	quit;
@@ -76,19 +76,20 @@ the average sale_amount>$6000 and ordered by the average sale_amount. **/
 
 proc sql noprint;
 	create table salesarea_sum as
-	select sales_name, area,
-	avg(sale_amount) as avg_sales format dollar11.,
-	max(sale_amount) as max_sales format dollar11.,
-	min(sale_amount) as min_sales format dollar11.
-	from hk_data.sales_employees a
-	inner join hk_data.sales_records b
+	select b.sales_id, b.sales_name, b.area,
+	avg(a.sale_amount) as avg_sales format=dollar13.,
+	max(a.sale_amount) as max_sales format=dollar13.,
+	min(a.sale_amount) as min_sales format=dollar13.
+	from hk_data.sales_records a
+	inner join hk_data.sales_employees b
 	on a.sales_id = b.sales_id
-	group by sales_name, area
-	having avg_sales>60000
+	group by b.sales_id, b.sales_name, b.area
+	having avg(a.sale_amount)>6000
 	order by avg_sales;
 	quit;
 	run;
-	
+
+
 /**SAS Data sets for Q5 to Q6: WORK.Travel_flight and 
 WORK. Travel_delay **/
 
