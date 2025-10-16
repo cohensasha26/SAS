@@ -102,7 +102,8 @@ run;
 /**-- the output shows that both p-values in 'Pooled' and 'Satterthwaite T-test' are <0.001, so the difference
 of the utilization between the two groups (high_income & other) are significant. We first check the Equality of
 Variances test to test if the variance of utilization between the two groups are significant or not, since it shows
-a p-value <0.001, the difference is significant, so we then use the result of the Satterhwaite t-test. --**/
+a p-value <0.001, the difference is significant, so we then use the result of the Satterhwaite t-test which has a
+ p-value on <0.01 and under Variances is listed as 'unequal'. --**/
 
 /**Q10. For the variable ‘age’, create a new character type variable 
 ‘agegrp’, which contains 4 levels a)’0_30’ if ‘age’<=30 b)31-50 
