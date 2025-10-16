@@ -1,4 +1,4 @@
-/** SAS Data sets for Q1 to Q5: WORK.Risk_data **/
+/** SAS Data sets for: WORK.Risk_data **/
 
 /**Using the ‘PROC UNIVARIATE’ to analyze the variable 
 ‘utilization’ for the following measures: **/
@@ -52,3 +52,77 @@ var utilization;
 histogram utilization/normal midpoints=0 to 150 by 10;
 run;
 /*---The top and bottom 5% value of 'utilization' are 100 and 0, respectiveyl---*/
+
+
+/**Q6. Checking the inter-correlation (Pearson) among the variables 
+‘income’, ‘debt_ratio’, ‘high_risk_ind’, ‘utilization’ and 
+‘age’. Please send the result into a SAS table ‘corr_info’. 
+(Note you will ignore the missing values when calculating 
+correlation coefficients) **/
+
+proc corr data=hk_data.risk_data out=corr_info nomiss;
+	var income debt_ratio high_risk_ind utilization age;
+	run;
+
+
+/**Q7. Checking the inter-correlation (Pearson) among the variables 
+‘income’, ‘debt_ratio’, ‘high_risk_ind’, ‘utilization’ and 
+‘age’. Please send the top one correlated variable (for each 
+variable above) into a SAS table ‘corr_best’. (Note you will 
+ignore the missing values when calculating correlation 
+coefficients) **/
+
+proc corr data=hk_data.risk_data spearman out=corr_best nomiss best=2;
+	var income debt_ratio high_risk_ind utilization age;
+	run;
+
+/**Q8. For the variable ‘utilization’, calculate the mean, median, 
+STD and 97% confidence interval of mean value.  **/
+
+proc means data=hk_data.risk_data mean median std clm alpha=.03;
+	var utilization;
+	run;
+
+/**Q9. For the variable ‘income’, create a new character type 
+variable ‘incomegrp’, which contains two levels a)’high_income’ 
+if ‘income’>80000 b)others if not a). Then you do the t-test for 
+the variable ‘utilization’ based on the newly created class 
+variable ‘incomegrp’. Draw the conclusion from the SAS output. **/
+
+data risk_data_var;
+set hk_data.risk_data;
+if income>80000 then incomegrp='high_income';
+else incomegrp='other';
+run;
+
+proc ttest data=risk_data_var;
+class incomegrp;
+var utilization;
+run;
+/**-- the output shows that both p-values in 'Pooled' and 'Satterthwaite T-test' are <0.001, so the difference
+of the utilization between the two groups (high_income & other) are significant. We first check the Equality of
+Variances test to test if the variance of utilization between the two groups are significant or not, since it shows
+a p-value <0.001, the difference is significant, so we then use the result of the Satterhwaite t-test. --**/
+
+/**Q10. For the variable ‘age’, create a new character type variable 
+‘agegrp’, which contains 4 levels a)’0_30’ if ‘age’<=30 b)31-50 
+if 31<=’age’<=50 c) 51-65 if 51<=’age’<=65 d)65p if ‘age’>65. 
+Then you perform the ANOVA F-test with DUNCAN mean test for the 
+variable ‘utilization’ based on the newly created class variable 
+‘agegrp’. Draw the conclusion from the SAS output. **/
+
+data risk_data;
+set hk_data.risk_data;
+if age<=30 then agegrp='0_30';
+else if 31<= age <=50 then agegrp='31_50';
+else if 51<= age <=65 then agegrp='51_65';
+else agegrp='65p';
+run;
+
+proc anova data=risk_data;
+class agegrp;
+model utilization=agegrp;
+means agegrp/duncan alpha=0.05;
+run;
+/**--The output shows the p-value of the F-test is <0.001, so there is significant difference of the utilization
+between the different age groups--**/
